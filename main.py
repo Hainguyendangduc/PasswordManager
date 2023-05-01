@@ -2,6 +2,7 @@ from tkinter import *
 from tkinter import messagebox
 import random
 import pyperclip
+import json
 # ---------------------------- PASSWORD GENERATOR ------------------------------- #
 #Password Generator Project
 def generate_password():
@@ -31,21 +32,46 @@ def save():
     web = entry1.get()
     e = entry2.get()
     pw = entry3.get()
-
+    new_data = {web: {
+        "email": e,
+        "password": pw,
+    }}
     if len(web) == 0 or len(e) == 0 or len(pw) == 0:
         messagebox.showinfo(title="Oops", message="Please make sure you haven't left any fields empty.")
     else:
-         is_ok = messagebox.showinfo(title="web", message=f"These are details entered: \n"
-                                             f"Email: {e}\n"
-                                             f"Password: {pw}\n"
-                                             f"It's ok to save?")
+        try:
+            with open("data.json", "r") as data_file:
+                # reading old data
+                data = json.load(data_file)
+        except FileNotFoundError:
+            with open("data.json", "w") as data_file:
+                # saving
+                json.dump(new_data, data_file, indent=4)
+        else:
+            # updating
+            data.update(new_data)
 
-    if is_ok:
-        with open("data.txt", "a") as data_file:
-            data_file.write(f"{web} | {e} | {pw}\n")
+            with open("data.json", "w") as data_file:
+                json.dump(data, data_file, indent=4)
+        finally:
             entry1.delete(0, END)
             entry2.delete(0, END)
             entry3.delete(0, END)
+
+# ---------------------------- Search ----------------------------------#
+def search():
+    web_name = entry1.get()
+    try:
+        with open("data.json", "r") as data_file:
+            data = json.load(data_file)
+            data = data[web_name]
+    except FileNotFoundError:
+        messagebox.showinfo(title="Oops", message="No value can be stored.")
+    except KeyError:
+        messagebox.showinfo(title="Oops", message=f"Can not find {web_name} website ")
+    else:
+        messagebox.showinfo(title=f"{web_name}", message=f"Email: {data['email']}\n"
+                                                         f"Password: {data['password']}")
 
 # ---------------------------- UI SETUP ------------------------------- #
 window = Tk()
@@ -68,8 +94,8 @@ password = Label(text="Password:")
 password.grid(column=0, row=3)
 
 #Entries
-entry1 = Entry(width=51)
-entry1.grid(column=1, row=1, columnspan=2)
+entry1 = Entry(width=33)
+entry1.grid(column=1, row=1)
 entry1.focus()
 
 entry2 = Entry(width=51)
@@ -82,6 +108,9 @@ entry3.grid(column=1, row=3)
 #button
 button = Button(text="Generate Password", command=generate_password)
 button.grid(column=2, row=3)
+
+button = Button(text="Search", command=search)
+button.grid(column=2, row=1)
 
 add_button = Button(text="Add", width=43, command=save)
 add_button.grid(column=1, row=4, columnspan=2)
